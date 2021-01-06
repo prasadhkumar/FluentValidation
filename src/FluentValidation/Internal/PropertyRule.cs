@@ -53,16 +53,6 @@ namespace FluentValidation.Internal {
 		internal Func<ValidationContext<T>, CancellationToken, Task<bool>> AsyncCondition => _asyncCondition;
 
 		/// <summary>
-		/// Checks whether this rule has a condition defined.
-		/// </summary>
-		public bool HasCondition => _condition != null;
-
-		/// <summary>
-		/// Checks whether this rule has an async condition defined.
-		/// </summary>
-		public bool HasAsyncCondition => _asyncCondition != null;
-
-		/// <summary>
 		/// Property associated with this rule.
 		/// </summary>
 		public MemberInfo Member { get; }
