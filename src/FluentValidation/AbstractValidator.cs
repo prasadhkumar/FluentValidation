@@ -32,7 +32,7 @@ namespace FluentValidation {
 	/// </summary>
 	/// <typeparam name="T">The type of the object being validated</typeparam>
 	public abstract class AbstractValidator<T> : IValidator<T>, IEnumerable<IValidationRule> {
-		internal TrackingCollection<PropertyRule<T>> Rules { get; } = new TrackingCollection<PropertyRule<T>>();
+		internal TrackingCollection<IValidationRule<T>> Rules { get; } = new TrackingCollection<IValidationRule<T>>();
 		private Func<CascadeMode> _cascadeMode = () => ValidatorOptions.Global.CascadeMode;
 
 		/// <summary>
@@ -179,7 +179,7 @@ namespace FluentValidation {
 		/// <returns>an IRuleBuilder instance on which validators can be defined</returns>
 		public IRuleBuilderInitial<T, TProperty> RuleFor<TProperty>(Expression<Func<T, TProperty>> expression) {
 			expression.Guard("Cannot pass null to RuleFor", nameof(expression));
-			var rule = PropertyRule<T>.Create(expression, () => CascadeMode);
+			var rule = PropertyRule<T, TProperty>.Create(expression, () => CascadeMode);
 			Rules.Add(rule);
 			var ruleBuilder = new RuleBuilder<T, TProperty>(rule, this);
 			return ruleBuilder;
@@ -199,7 +199,7 @@ namespace FluentValidation {
 		/// <returns>an IRuleBuilder instance on which validators can be defined</returns>
 		public IRuleBuilderInitial<T, TTransformed> RuleFor<TProperty, TTransformed>(Expression<Func<T, TProperty>> expression, Func<TProperty, TTransformed> transform) {
 			expression.Guard("Cannot pass null to RuleFor", nameof(expression));
-			var rule = PropertyRule<T>.Create(expression, transform, () => CascadeMode);
+			var rule = PropertyRule<T, TTransformed>.Create(expression, transform, () => CascadeMode);
 			Rules.Add(rule);
 			var ruleBuilder = new RuleBuilder<T, TTransformed>(rule, this);
 			return ruleBuilder;
@@ -219,7 +219,7 @@ namespace FluentValidation {
 		/// <returns>an IRuleBuilder instance on which validators can be defined</returns>
 		public IRuleBuilderInitial<T, TTransformed> RuleFor<TProperty, TTransformed>(Expression<Func<T, TProperty>> expression, Func<T, TProperty, TTransformed> transform) {
 			expression.Guard("Cannot pass null to RuleFor", nameof(expression));
-			var rule = PropertyRule<T>.Create(expression, transform, () => CascadeMode);
+			var rule = PropertyRule<T, TTransformed>.Create(expression, transform, () => CascadeMode);
 			Rules.Add(rule);
 			var ruleBuilder = new RuleBuilder<T, TTransformed>(rule, this);
 			return ruleBuilder;
