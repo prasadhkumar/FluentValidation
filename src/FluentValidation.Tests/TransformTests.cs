@@ -26,7 +26,7 @@ namespace FluentValidation.Tests {
 		[Fact]
 		public void Transforms_property_value() {
 			var validator = new InlineValidator<Person>();
-			validator.RuleFor(x => x.Surname).Transform(name => "foo" + name).Equal("foobar");
+			validator.RuleFor(x => x.Surname, transform: name => "foo" + name).Equal("foobar");
 
 			var result = validator.Validate(new Person {Surname = "bar"});
 			result.IsValid.ShouldBeTrue();
@@ -35,7 +35,7 @@ namespace FluentValidation.Tests {
 		[Fact]
 		public void Transforms_property_value_to_another_type() {
 			var validator = new InlineValidator<Person>();
-			validator.RuleFor(x => x.Surname).Transform(name => 1).GreaterThan(10);
+			validator.RuleFor(x => x.Surname, transform: name => 1).GreaterThan(10);
 
 			var result = validator.Validate(new Person {Surname = "bar"});
 			result.IsValid.ShouldBeFalse();
@@ -43,10 +43,9 @@ namespace FluentValidation.Tests {
 		}
 
 		[Fact]
-		public void Transforms_property_value_with_propagated_original_object() {
+		public void Transforms_property_value_with_propagated_original_object_old() {
 			var validator = new InlineValidator<Person>();
-			validator.RuleFor(x => x.Forename)
-				.Transform((person, forename) => new {Nicks = person.NickNames, Name = forename})
+			validator.RuleFor(x => x.Forename, transform: (person, forename) => new {Nicks = person.NickNames, Name = forename})
 				.Must(context => context.Nicks.Any(nick => nick == context.Name.ToLower()));
 
 			var result = validator.Validate(new Person {NickNames = new[] {"good11", "peter"}, Forename = "Peter"});
@@ -54,10 +53,9 @@ namespace FluentValidation.Tests {
 		}
 
 		[Fact]
-		public async Task Transforms_property_value_with_propagated_original_object_async() {
+		public async Task Transforms_property_value_with_propagated_original_object_async_old() {
 			var validator = new InlineValidator<Person>();
-			validator.RuleFor(x => x.Forename)
-				.Transform((person, forename) => new {Nicks = person.NickNames, Name = forename})
+			validator.RuleFor(x => x.Forename, transform: (person, forename) => new {Nicks = person.NickNames, Name = forename})
 				.Must(context => context.Nicks.Any(nick => nick == context.Name.ToLower()));
 
 			var result = await validator.ValidateAsync(new Person {NickNames = new[] {"good11", "peter"}, Forename = "Peter"});
@@ -67,8 +65,7 @@ namespace FluentValidation.Tests {
 		[Fact]
 		public void Transforms_collection_element() {
 			var validator = new InlineValidator<Person>();
-			validator.RuleForEach(x => x.Orders)
-				.Transform(order => order.Amount)
+			validator.RuleForEach(x => x.Orders, transform: order => order.Amount)
 				.GreaterThan(0);
 
 			var result = validator.Validate(new Person() {Orders = new List<Order> {new Order()}});
@@ -78,8 +75,7 @@ namespace FluentValidation.Tests {
 		[Fact]
 		public async Task Transforms_collection_element_async() {
 			var validator = new InlineValidator<Person>();
-			validator.RuleForEach(x => x.Orders)
-				.Transform(order => order.Amount)
+			validator.RuleForEach(x => x.Orders, order => order.Amount)
 				.MustAsync((amt, token) => Task.FromResult(amt > 0));
 
 			var result = await validator.ValidateAsync(new Person() {Orders = new List<Order> {new Order()}});
@@ -88,8 +84,7 @@ namespace FluentValidation.Tests {
 
 		public void Transforms_collection_element_with_propagated_original_object() {
 			var validator = new InlineValidator<Person>();
-			validator.RuleForEach(x => x.Children)
-				.Transform((parent, children) => new {ParentName = parent.Surname, Children = children})
+			validator.RuleForEach(x => x.Children, (parent, children) => new {ParentName = parent.Surname, Children = children})
 				.Must(context => context.ParentName == context.Children.Surname);
 
 			var child = new Person {Surname = "Pupa"};
@@ -101,14 +96,33 @@ namespace FluentValidation.Tests {
 		[Fact]
 		public async Task Transforms_collection_element_with_propagated_original_object_async() {
 			var validator = new InlineValidator<Person>();
-			validator.RuleForEach(x => x.Children)
-				.Transform((parent, children) => new {ParentName = parent.Surname, Children = children})
+			validator.RuleForEach(x => x.Children, (parent, children) => new {ParentName = parent.Surname, Children = children})
 				.Must(context => context.ParentName == context.Children.Surname);
 
 			var child = new Person {Surname = "Pupa"};
 			var result = await validator.ValidateAsync(new Person() {Surname = "Lupa", Children = new List<Person> {child}});
 			result.IsValid.ShouldBeFalse();
 			result.Errors.Count.ShouldEqual(1);
+		}
+
+		[Fact]
+		public void Transform_collection_index_builder_and_condition() {
+			var validator = new InlineValidator<Person>();
+			validator.RuleForEach(x => x.Orders, transform: order => order.Amount)
+				.Where(amt => amt < 20)
+				.OverrideIndexer((person, collection, amt, numericIndex) => $"[{numericIndex}_{amt}]")
+				.LessThan(10);
+
+			var result = validator.Validate(new Person {
+				Orders = new List<Order> {
+					new Order {Amount = 21}, // Fails condition, skips validation
+					new Order {Amount = 12}, // Passes condition, fails validation
+					new Order {Amount = 9}, // Passes condition, passes validation
+				}
+			});
+
+			result.Errors.Count.ShouldEqual(1);
+			result.Errors[0].PropertyName.ShouldEqual("Orders[1_12]");
 		}
 	}
 }

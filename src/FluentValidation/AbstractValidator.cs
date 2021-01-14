@@ -179,8 +179,6 @@ namespace FluentValidation {
 		/// <returns>an IRuleBuilder instance on which validators can be defined</returns>
 		public IRuleBuilderInitial<T, TProperty> RuleFor<TProperty>(Expression<Func<T, TProperty>> expression) {
 			expression.Guard("Cannot pass null to RuleFor", nameof(expression));
-			// If rule-level caching is enabled, then bypass the expression-level cache.
-			// Otherwise we essentially end up caching expressions twice unnecessarily.
 			var rule = PropertyRule<T>.Create(expression, () => CascadeMode);
 			Rules.Add(rule);
 			var ruleBuilder = new RuleBuilder<T, TProperty>(rule, this);
@@ -188,7 +186,48 @@ namespace FluentValidation {
 		}
 
 		/// <summary>
-		/// Invokes a rule for each item in the collection
+		/// Defines a validation rule for a specify property and an optional transformer.
+		/// This overload allows for the property value to be transformed into a different type prior to validation.
+		/// </summary>
+		/// <example>
+		/// RuleFor(x => x.OrderNumber, orderNumber => orderNumber.ToString())...
+		/// </example>
+		/// <typeparam name="TProperty">The type of property being validated</typeparam>
+		/// <typeparam name="TTransformed">The type after the transformer has been applied</typeparam>
+		/// <param name="expression">The expression representing the property to validate</param>
+		/// <param name="transform">Function to transform the property value into a different type</param>
+		/// <returns>an IRuleBuilder instance on which validators can be defined</returns>
+		public IRuleBuilderInitial<T, TTransformed> RuleFor<TProperty, TTransformed>(Expression<Func<T, TProperty>> expression, Func<TProperty, TTransformed> transform) {
+			expression.Guard("Cannot pass null to RuleFor", nameof(expression));
+			var rule = PropertyRule<T>.Create(expression, transform, () => CascadeMode);
+			Rules.Add(rule);
+			var ruleBuilder = new RuleBuilder<T, TTransformed>(rule, this);
+			return ruleBuilder;
+		}
+
+		/// <summary>
+		/// Defines a validation rule for a specify property and an optional transformer.
+		/// This overload allows for the property value to be transformed into a different type prior to validation.
+		/// </summary>
+		/// <example>
+		/// RuleFor(x => x.OrderNumber, orderNumber => orderNumber.ToString())...
+		/// </example>
+		/// <typeparam name="TProperty">The type of property being validated</typeparam>
+		/// <typeparam name="TTransformed">The type after the transformer has been applied</typeparam>
+		/// <param name="expression">The expression representing the property to validate</param>
+		/// <param name="transform">Function to transform the property value into a different type</param>
+		/// <returns>an IRuleBuilder instance on which validators can be defined</returns>
+		public IRuleBuilderInitial<T, TTransformed> RuleFor<TProperty, TTransformed>(Expression<Func<T, TProperty>> expression, Func<T, TProperty, TTransformed> transform) {
+			expression.Guard("Cannot pass null to RuleFor", nameof(expression));
+			var rule = PropertyRule<T>.Create(expression, transform, () => CascadeMode);
+			Rules.Add(rule);
+			var ruleBuilder = new RuleBuilder<T, TTransformed>(rule, this);
+			return ruleBuilder;
+		}
+
+
+		/// <summary>
+		/// Invokes a rule for each item in the collection.
 		/// </summary>
 		/// <typeparam name="TElement">Type of property</typeparam>
 		/// <param name="expression">Expression representing the collection to validate</param>
@@ -198,6 +237,40 @@ namespace FluentValidation {
 			var rule = CollectionPropertyRule<T, TElement>.Create(expression, () => CascadeMode);
 			Rules.Add(rule);
 			var ruleBuilder = new RuleBuilder<T, TElement>(rule, this);
+			return ruleBuilder;
+		}
+
+		/// <summary>
+		/// Invokes a rule for each item in the collection.
+		/// This overload allows for the collection element to be transformed into a different type prior to validation.
+		/// </summary>
+		/// <typeparam name="TElement">Type of property</typeparam>
+		/// <typeparam name="TTransformed">The type after the transformer has been applied</typeparam>
+		/// <param name="expression">Expression representing the collection to validate</param>
+		/// <param name="transform">Function to transform the collection element into a different type</param>
+		/// <returns>An IRuleBuilder instance on which validators can be defined</returns>
+		public IRuleBuilderInitialCollection<T, TTransformed> RuleForEach<TElement, TTransformed>(Expression<Func<T, IEnumerable<TElement>>> expression, Func<TElement, TTransformed> transform) {
+			expression.Guard("Cannot pass null to RuleForEach", nameof(expression));
+			var rule = CollectionPropertyRule<T, TTransformed>.CreateTransformed<TElement>(expression, transform, () => CascadeMode);
+			Rules.Add(rule);
+			var ruleBuilder = new RuleBuilder<T, TTransformed>(rule, this);
+			return ruleBuilder;
+		}
+
+		/// <summary>
+		/// Invokes a rule for each item in the collection.
+		/// This overload allows for the collection element to be transformed into a different type prior to validation.
+		/// </summary>
+		/// <typeparam name="TElement">Type of property</typeparam>
+		/// <typeparam name="TTransformed">The type after the transformer has been applied</typeparam>
+		/// <param name="expression">Expression representing the collection to validate</param>
+		/// <param name="transform">Function to transform the collection element into a different type</param>
+		/// <returns>An IRuleBuilder instance on which validators can be defined</returns>
+		public IRuleBuilderInitialCollection<T, TTransformed> RuleForEach<TElement, TTransformed>(Expression<Func<T, IEnumerable<TElement>>> expression, Func<T, TElement, TTransformed> transform) {
+			expression.Guard("Cannot pass null to RuleForEach", nameof(expression));
+			var rule = CollectionPropertyRule<T, TTransformed>.CreateTransformed<TElement>(expression, transform, () => CascadeMode);
+			Rules.Add(rule);
+			var ruleBuilder = new RuleBuilder<T, TTransformed>(rule, this);
 			return ruleBuilder;
 		}
 
