@@ -963,7 +963,6 @@ namespace FluentValidation {
 		/// Defines a scale precision validator on the current rule builder that ensures that the specific value has a certain scale and precision
 		/// </summary>
 		/// <typeparam name="T">Type of object being validated</typeparam>
-		/// <typeparam name="TProperty">Type of property being validated</typeparam>
 		/// <param name="ruleBuilder">The rule builder on which the validator should be defined</param>
 		/// <param name="scale">Allowed scale of the value</param>
 		/// <param name="precision">Allowed precision of the value</param>
